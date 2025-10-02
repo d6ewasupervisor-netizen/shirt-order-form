@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Shirt Order Form</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        #orderModal, #userInfoPage, #orderPage {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .modal-content {
+            transition: transform 0.3s ease-in-out;
+        }
+        .quantity-stepper button {
+            transition: background-color 0.2s;
+        }
+        .quantity-stepper button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        /* Styles for the name tag preview */
+        .name-tag-preview {
+            position: relative;
+            width: 100%; /* Make it responsive */
+            max-width: 280px; /* Set a max size */
+            aspect-ratio: 2 / 1; /* Maintain the name tag ratio */
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .name-tag-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .name-tag-text {
+            position: absolute;
+            top: 65%; /* Raised the text one line */
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px; /* Adjust font size */
+            font-weight: 600;
+            color: #000000; /* Changed to black */
+            text-align: center;
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- User Information Page -->
+    <div id="userInfoPage" class="container mx-auto max-w-lg p-4 sm:p-6 lg:p-8 min-h-screen flex items-center">
+        <div class="bg-white w-full rounded-2xl shadow-lg p-6 sm:p-8">
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 text-center">Employee Information</h1>
+            <p class="mt-2 text-center text-gray-600">Please enter your details to proceed.</p>
+            <form id="userInfoForm" class="mt-8 space-y-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="firstName" class="block text-sm font-medium text-gray-700">First Name</label>
+                        <input type="text" id="firstName" name="firstName" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="lastName" class="block text-sm font-medium text-gray-700">Last Name</label>
+                        <input type="text" id="lastName" name="lastName" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                    <input type="email" id="email" name="email" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                </div>
+                
+                <!-- Structured Address Fields -->
+                <div class="space-y-6">
+                    <div>
+                        <label for="streetAddress" class="block text-sm font-medium text-gray-700">Street Address</label>
+                        <input type="text" id="streetAddress" name="streetAddress" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div>
+                        <label for="aptSuite" class="block text-sm font-medium text-gray-700">Apartment, suite, etc. <span class="text-gray-500">(Optional)</span></label>
+                        <input type="text" id="aptSuite" name="aptSuite" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-6 gap-x-4 gap-y-6">
+                        <div class="sm:col-span-3">
+                            <label for="city" class="block text-sm font-medium text-gray-700">City</label>
+                            <input type="text" id="city" name="city" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                        <div class="sm:col-span-1">
+                            <label for="state" class="block text-sm font-medium text-gray-700">State</label>
+                            <input type="text" id="state" name="state" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label for="zipCode" class="block text-sm font-medium text-gray-700">ZIP Code</label>
+                            <input type="text" id="zipCode" name="zipCode" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit" class="w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300">
+                        Continue to Order
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Shirt Order Page (Initially Hidden) -->
+    <div id="orderPage" class="container mx-auto max-w-6xl p-4 sm:p-6 lg:p-8 hidden opacity-0">
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2">
+                <!-- Product Image Column -->
+                <div class="p-4 sm:p-6 lg:p-8 flex items-center justify-center bg-gray-100">
+                    <img src="https://i.imgur.com/xdWj68B.png" alt="Navy Blue Polo Shirt with Retail Odyssey Logo" class="rounded-xl object-contain max-h-[500px] w-full">
+                </div>
+
+                <!-- Product Details and Order Form Column -->
+                <div class="p-4 sm:p-6 lg:p-8 flex flex-col">
+                    <div>
+                        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900">Retail Odyssey Polo</h1>
+                        <p class="mt-2 text-sm text-gray-500">Item # SAS-POLO-RO</p>
+                        
+                        <div class="mt-6">
+                            <h3 class="text-lg font-semibold text-gray-900">Description</h3>
+                            <p class="mt-2 text-gray-600">UNISEX PIQUE POLO</p>
+                        </div>
+
+                        <div class="mt-6">
+                             <h3 class="text-lg font-semibold text-gray-900">Color</h3>
+                             <div class="mt-2">
+                                <span class="inline-flex items-center rounded-md px-2 py-1 text-sm font-medium text-gray-900 ring-1 ring-inset ring-gray-200">
+                                    Navy
+                                </span>
+                             </div>
+                        </div>
+
+                        <!-- Size and Quantity Selection -->
+                        <div class="mt-8">
+                            <h3 class="text-lg font-semibold text-gray-900">Select Shirt Size & Quantity</h3>
+                            <p class="text-sm text-gray-500">(Select one size, max 2 shirts)</p>
+                            <div id="size-selector" class="mt-4 grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-4">
+                                <!-- Sizes will be dynamically inserted here by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Name Tag Section -->
+                        <div class="mt-8 border-t border-gray-200 pt-8">
+                             <h3 class="text-lg font-semibold text-gray-900">Name Tag</h3>
+                             <fieldset class="mt-4">
+                                <legend class="sr-only">Name tag option</legend>
+                                <div class="flex items-center space-x-6">
+                                    <div class="flex items-center">
+                                        <input id="nameTagNo" name="nameTagOption" type="radio" value="no" checked class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500">
+                                        <label for="nameTagNo" class="ml-3 block text-sm font-medium text-gray-700">No, I don't need one</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input id="nameTagYes" name="nameTagOption" type="radio" value="yes" class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500">
+                                        <label for="nameTagYes" class="ml-3 block text-sm font-medium text-gray-700">Yes, I need a name tag</label>
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            <div id="nameTagFields" class="hidden mt-6 space-y-4">
+                                <div class="flex flex-col sm:flex-row gap-6 items-start">
+                                    <div class="flex-1 w-full">
+                                        <div class="mb-4">
+                                            <label for="defaultNameTagDisplay" class="block text-sm font-medium text-gray-700">Default Name Tag</label>
+                                            <input type="text" id="defaultNameTagDisplay" name="defaultNameTagDisplay" readonly class="mt-1 block w-full border-gray-300 rounded-md shadow-sm bg-gray-100 sm:text-sm cursor-not-allowed">
+                                        </div>
+                                        <label for="nameForTag" class="block text-sm font-medium text-gray-700">Preferred Name Tag</label>
+                                        <input type="text" id="nameForTag" name="nameForTag" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                        <p class="mt-2 text-xs text-gray-500">I will use your default name unless you provide a preferred name.</p>
+                                        
+                                        <div class="mt-4">
+                                             <label for="nameTagComment" class="block text-sm font-medium text-gray-700">Comments <span class="text-gray-500">(Optional)</span></label>
+                                             <textarea id="nameTagComment" name="nameTagComment" rows="2" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="flex-shrink-0 w-full sm:w-auto">
+                                        <label class="block text-sm font-medium text-gray-700 text-center">Preview</label>
+                                        <div class="mt-1 name-tag-preview">
+                                            <img src="https://i.imgur.com/CmKgUSQ.png" alt="Name tag preview">
+                                            <div id="nameTagPreviewText" class="name-tag-text"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    
+                    <div class="mt-auto pt-8">
+                         <button id="submitOrderBtn" class="w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300">
+                            Review My Order
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Summary Modal -->
+    <div id="orderModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none" style="display: none;">
+        <div class="modal-content bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 sm:p-8 transform scale-95">
+            <div class="flex justify-between items-center">
+                <h2 class="text-2xl font-bold text-gray-900">Confirm Submission</h2>
+                <button id="closeModalBtn" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <p id="modal-text" class="mt-4 text-gray-600">Please review your selections. Pressing "Submit Order" will finalize your request.</p>
+            
+            <div id="summaryContent" class="mt-6 bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm space-y-2">
+                <!-- Summary will be injected here -->
+            </div>
+
+            <div id="modal-footer" class="mt-6 flex flex-col sm:flex-row gap-3">
+                <button id="confirmSubmitBtn" class="w-full sm:w-auto flex-1 bg-blue-600 text-white font-semibold py-2.5 px-4 rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300">
+                    Submit Order
+                </button>
+                <button id="closeModalBtn2" class="w-full sm:w-auto flex-1 bg-gray-200 text-gray-700 font-semibold py-2.5 px-4 rounded-lg hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition duration-300">
+                    Cancel
+                </button>
+            </div>
+             <p id="copy-success-msg" class="text-center text-green-600 font-medium mt-3 text-sm" style="display: none;">Order submitted successfully!</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // IMPORTANT: Paste your Power Automate URL here
+            const flowURL = 'https://defaultf96ae7b72a2243a59357a82ad6b9cb.73.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/0f92a1ae7b8f4b95a5dc1419554e70f9/triggers/manual/paths/invoke?api-version=1'; 
+
+            const userInfoPage = document.getElementById('userInfoPage');
+            const orderPage = document.getElementById('orderPage');
+            const userInfoForm = document.getElementById('userInfoForm');
+            
+            const sizes = ['S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL', '6XL', '7XL'];
+            const sizeSelector = document.getElementById('size-selector');
+            const MAX_TOTAL_QUANTITY = 2;
+            let userInfo = {};
+
+            const nameTagYesRadio = document.getElementById('nameTagYes');
+            const nameTagNoRadio = document.getElementById('nameTagNo');
+            const nameTagFields = document.getElementById('nameTagFields');
+            const nameForTagInput = document.getElementById('nameForTag');
+            const nameTagPreviewText = document.getElementById('nameTagPreviewText');
+            const defaultNameTagDisplay = document.getElementById('defaultNameTagDisplay');
+
+            // 1. Handle User Info Form Submission
+            userInfoForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const formData = new FormData(userInfoForm);
+
+                const street = formData.get('streetAddress');
+                const apt = formData.get('aptSuite');
+                const city = formData.get('city');
+                const state = formData.get('state');
+                const zip = formData.get('zipCode');
+
+                userInfo = {
+                    firstName: formData.get('firstName'),
+                    lastName: formData.get('lastName'),
+                    fullName: `${formData.get('firstName')} ${formData.get('lastName')}`,
+                    email: formData.get('email'),
+                    streetAddress: street,
+                    aptSuite: apt,
+                    city: city,
+                    state: state,
+                    zipCode: zip,
+                };
+                
+                if (userInfo.firstName && userInfo.lastName && userInfo.email && userInfo.streetAddress && userInfo.city && userInfo.state && userInfo.zipCode) {
+                    // Set default name tag value
+                    defaultNameTagDisplay.value = userInfo.firstName;
+                    nameForTagInput.value = userInfo.firstName;
+                    nameTagPreviewText.textContent = userInfo.firstName;
+
+                    userInfoPage.classList.add('opacity-0', 'pointer-events-none');
+                    setTimeout(() => {
+                        userInfoPage.classList.add('hidden');
+                        orderPage.classList.remove('hidden');
+                        setTimeout(() => orderPage.classList.remove('opacity-0'), 50); // fade in
+                    }, 300);
+                }
+            });
+
+            // 2. Populate size inputs with steppers
+            sizes.forEach(size => {
+                const sizeElement = document.createElement('div');
+                sizeElement.classList.add('text-center');
+                sizeElement.innerHTML = `
+                    <label class="text-sm font-medium text-gray-700">${size}</label>
+                    <div class="mt-1 flex items-center justify-center border border-gray-300 rounded-md quantity-stepper">
+                        <button data-action="decrement" data-size="${size}" class="px-2 py-1 text-lg font-bold text-gray-600 hover:bg-gray-200 rounded-l-md" disabled>-</button>
+                        <span data-size="${size}" class="quantity-display w-8 text-center text-sm font-semibold">0</span>
+                        <button data-action="increment" data-size="${size}" class="px-2 py-1 text-lg font-bold text-gray-600 hover:bg-gray-200 rounded-r-md">+</button>
+                    </div>
+                `;
+                sizeSelector.appendChild(sizeElement);
+            });
+            
+            function getTotalQuantity() {
+                let total = 0;
+                sizeSelector.querySelectorAll('.quantity-display').forEach(display => {
+                    total += parseInt(display.textContent, 10);
+                });
+                return total;
+            }
+
+            function updateAllButtonStates() {
+                const totalQuantity = getTotalQuantity();
+                let selectedSize = null;
+
+                sizeSelector.querySelectorAll('.quantity-display').forEach(display => {
+                    if (parseInt(display.textContent) > 0) {
+                        selectedSize = display.dataset.size;
+                    }
+                });
+
+                sizeSelector.querySelectorAll('.quantity-stepper').forEach(stepper => {
+                    const size = stepper.querySelector('.quantity-display').dataset.size;
+                    const currentQuantity = parseInt(stepper.querySelector('.quantity-display').textContent);
+                    const incrementBtn = stepper.querySelector('button[data-action="increment"]');
+                    const decrementBtn = stepper.querySelector('button[data-action="decrement"]');
+                    
+                    decrementBtn.disabled = currentQuantity === 0;
+
+                    if (selectedSize) {
+                        if (size === selectedSize) {
+                            incrementBtn.disabled = totalQuantity >= MAX_TOTAL_QUANTITY;
+                        } else {
+                            incrementBtn.disabled = true;
+                        }
+                    } else {
+                        // If no size is selected yet, all increment buttons should be enabled
+                        incrementBtn.disabled = false;
+                    }
+                });
+            }
+            
+            // 3. Handle quantity changes
+            sizeSelector.addEventListener('click', (e) => {
+                const target = e.target.closest('button');
+                if (!target) return;
+
+                const action = target.dataset.action;
+                const size = target.dataset.size;
+                
+                const quantityDisplay = sizeSelector.querySelector(`.quantity-display[data-size="${size}"]`);
+                let currentQuantity = parseInt(quantityDisplay.textContent, 10);
+                const totalQuantity = getTotalQuantity();
+
+                if (action === 'increment') {
+                    if (totalQuantity < MAX_TOTAL_QUANTITY) {
+                        currentQuantity++;
+                    }
+                } else if (action === 'decrement') {
+                    if (currentQuantity > 0) {
+                        currentQuantity--;
+                    }
+                }
+
+                quantityDisplay.textContent = currentQuantity;
+                updateAllButtonStates();
+            });
+
+            // Name Tag Logic
+            nameTagYesRadio.addEventListener('change', () => {
+                if(nameTagYesRadio.checked) {
+                    nameTagFields.classList.remove('hidden');
+                }
+            });
+            nameTagNoRadio.addEventListener('change', () => {
+                if(nameTagNoRadio.checked) {
+                    nameTagFields.classList.add('hidden');
+                }
+            });
+            nameForTagInput.addEventListener('input', (e) => {
+                nameTagPreviewText.textContent = e.target.value;
+            });
+
+            // Modal and Submission Logic
+            const submitOrderBtn = document.getElementById('submitOrderBtn');
+            const orderModal = document.getElementById('orderModal');
+            const closeModalBtns = [document.getElementById('closeModalBtn'), document.getElementById('closeModalBtn2')];
+            const summaryContent = document.getElementById('summaryContent');
+            const confirmSubmitBtn = document.getElementById('confirmSubmitBtn');
+            const modalFooter = document.getElementById('modal-footer');
+            const modalText = document.getElementById('modal-text');
+            const copySuccessMsg = document.getElementById('copy-success-msg');
+
+            // 4. Handle opening the modal and creating the summary
+            submitOrderBtn.addEventListener('click', () => {
+                let addressHTML = `${userInfo.streetAddress}`;
+                if (userInfo.aptSuite) addressHTML += `, ${userInfo.aptSuite}`;
+                addressHTML += `<br>${userInfo.city}, ${userInfo.state} ${userInfo.zipCode}`;
+
+                let orderSummaryHTML = `
+                    <div>
+                        <p class="font-bold text-gray-800">${userInfo.fullName}</p>
+                        <p class="text-gray-500 text-xs">${userInfo.email}</p>
+                        <p class="text-gray-500 text-xs mt-1">${addressHTML}</p>
+                    </div>
+                    <hr class="my-2 border-gray-200">
+                    <div class="font-semibold text-gray-800">Order Details:</div>
+                `;
+                
+                let hasItems = false;
+                sizeSelector.querySelectorAll('.quantity-display').forEach(display => {
+                    const quantity = parseInt(display.textContent, 10);
+                    if (quantity > 0) {
+                        hasItems = true;
+                        const size = display.dataset.size;
+                        orderSummaryHTML += `<p class="flex justify-between"><span class="font-semibold">Shirt (Size ${size}):</span> <span>${quantity}</span></p>`;
+                    }
+                });
+
+                if (nameTagYesRadio.checked) {
+                     orderSummaryHTML += `<p class="flex justify-between"><span class="font-semibold">Name Tag:</span> <span>Yes</span></p>`;
+                     orderSummaryHTML += `<p class="flex justify-between"><span class="font-semibold">Name on Tag:</span> <span>${nameForTagInput.value}</span></p>`;
+                     if(document.getElementById('nameTagComment').value) {
+                        orderSummaryHTML += `<p class="flex flex-col"><span class="font-semibold">Comment:</span> <span class="text-xs text-gray-500">${document.getElementById('nameTagComment').value}</span></p>`;
+                     }
+                } else {
+                    orderSummaryHTML += `<p class="flex justify-between"><span class="font-semibold">Name Tag:</span> <span>No</span></p>`;
+                }
+                
+                
+                if (hasItems) {
+                    summaryContent.innerHTML = orderSummaryHTML;
+                    modalFooter.style.display = 'flex';
+                    modalText.textContent = 'Please review your selections. Pressing "Submit Order" will finalize your request.';
+                } else {
+                    summaryContent.innerHTML = `<p class="text-center text-gray-500 py-4">You haven't selected a shirt.</p>`;
+                    modalFooter.style.display = 'none';
+                    modalText.textContent = 'Please select a size and quantity before submitting.';
+                }
+
+                orderModal.style.display = 'flex';
+                setTimeout(() => {
+                    orderModal.classList.remove('opacity-0', 'pointer-events-none');
+                    orderModal.querySelector('.modal-content').classList.remove('scale-95');
+                }, 20);
+
+                copySuccessMsg.style.display = 'none';
+                confirmSubmitBtn.disabled = false;
+                confirmSubmitBtn.textContent = 'Submit Order';
+                summaryContent.style.display = 'block';
+            });
+
+            // 5. Handle closing the modal
+            const closeModal = () => {
+                orderModal.classList.add('opacity-0', 'pointer-events-none');
+                orderModal.querySelector('.modal-content').classList.add('scale-95');
+                setTimeout(() => {
+                    orderModal.style.display = 'none';
+                }, 300); 
+            };
+            
+            closeModalBtns.forEach(btn => btn.addEventListener('click', closeModal));
+            orderModal.addEventListener('click', (event) => { if (event.target === orderModal) closeModal(); });
+            document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeModal(); });
+
+            // 6. Handle the actual submission to Power Automate
+            confirmSubmitBtn.addEventListener('click', async () => {
+                if (flowURL.includes('YOUR_POWER_AUTOMATE_URL_HERE') || !flowURL) {
+                    alert('Configuration error: The Power Automate URL has not been set in the HTML file.');
+                    return;
+                }
+
+                let selectedSize = '';
+                let selectedQuantity = 0;
+                sizeSelector.querySelectorAll('.quantity-display').forEach(display => {
+                    const quantity = parseInt(display.textContent, 10);
+                    if (quantity > 0) {
+                        selectedSize = display.dataset.size;
+                        selectedQuantity = quantity;
+                    }
+                });
+
+                const payload = {
+                    ...userInfo,
+                    shirtSize: selectedSize,
+                    quantity: selectedQuantity,
+                    nameTagNeeded: nameTagYesRadio.checked ? 'Yes' : 'No',
+                    nameTagName: nameTagYesRadio.checked ? nameForTagInput.value : '',
+                    nameTagComment: nameTagYesRadio.checked ? document.getElementById('nameTagComment').value : ''
+                };
+
+                confirmSubmitBtn.disabled = true;
+                confirmSubmitBtn.textContent = 'Submitting...';
+
+                try {
+                    const response = await fetch(flowURL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.ok) {
+                        modalText.textContent = 'Your order has been submitted successfully!';
+                        summaryContent.style.display = 'none';
+                        modalFooter.style.display = 'none';
+                        copySuccessMsg.style.display = 'block';
+                        copySuccessMsg.textContent = 'Order submitted successfully!';
+                    } else {
+                        throw new Error('Network response was not ok.');
+                    }
+                } catch (error) {
+                    console.error('Error submitting order:', error);
+                    modalText.textContent = 'There was an error submitting your order. Please try again or contact support.';
+                    summaryContent.style.display = 'none';
+                    confirmSubmitBtn.disabled = false;
+                    confirmSubmitBtn.textContent = 'Try Again';
+                    modalFooter.style.display = 'flex'; // Show footer again to allow retry
+                }
+            });
+
+        });
+    </script>
+</body>
+</html>
+

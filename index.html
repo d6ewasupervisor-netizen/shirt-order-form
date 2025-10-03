@@ -231,8 +231,8 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // ** IMPORTANT ** This is your new live Google Apps Script URL.
-            const flowURL = 'https://script.google.com/macros/s/AKfycbwlewShL8w4R1BacoEimbnnRTlEXTfuoKpJxg_gC8haP9JVYIG09IjTkNX9ncclRXv20A/exec'; 
+            // ** IMPORTANT ** Paste your new Power Automate Flow URL here.
+            const flowURL = 'YOUR_POWER_AUTOMATE_URL_HERE'; 
 
             const userInfoPage = document.getElementById('userInfoPage');
             const orderPage = document.getElementById('orderPage');
@@ -254,40 +254,32 @@
             userInfoForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 const formData = new FormData(userInfoForm);
-
-                const street = formData.get('streetAddress');
-                const apt = formData.get('aptSuite');
-                const city = formData.get('city');
-                const state = formData.get('state');
-                const zip = formData.get('zipCode');
-
                 userInfo = {
-                    FirstName: formData.get('firstName'),
-                    LastName: formData.get('lastName'),
-                    Email: formData.get('email'),
-                    StreetAddress: street,
-                    Apartment: apt,
-                    City: city,
-                    State: state,
-                    ZipCode: zip,
+                    firstName: formData.get('firstName'),
+                    lastName: formData.get('lastName'),
+                    email: formData.get('email'),
+                    streetAddress: formData.get('streetAddress'),
+                    aptSuite: formData.get('aptSuite'),
+                    city: formData.get('city'),
+                    state: formData.get('state'),
+                    zipCode: formData.get('zipCode'),
                 };
                 
-                if (userInfo.FirstName && userInfo.LastName && userInfo.Email && userInfo.StreetAddress && userInfo.City && userInfo.State && userInfo.ZipCode) {
-                    // Set default name tag value
-                    defaultNameTagDisplay.value = userInfo.FirstName;
-                    nameForTagInput.value = userInfo.FirstName;
-                    nameTagPreviewText.textContent = userInfo.FirstName;
+                if (Object.values(userInfo).every(val => val !== '' || val === userInfo.aptSuite)) {
+                    defaultNameTagDisplay.value = userInfo.firstName;
+                    nameForTagInput.value = userInfo.firstName;
+                    nameTagPreviewText.textContent = userInfo.firstName;
 
                     userInfoPage.classList.add('opacity-0', 'pointer-events-none');
                     setTimeout(() => {
                         userInfoPage.classList.add('hidden');
                         orderPage.classList.remove('hidden');
-                        setTimeout(() => orderPage.classList.remove('opacity-0'), 50); // fade in
+                        setTimeout(() => orderPage.classList.remove('opacity-0'), 50);
                     }, 300);
                 }
             });
 
-            // 2. Populate size inputs with steppers
+            // 2. Populate size inputs
             sizes.forEach(size => {
                 const sizeElement = document.createElement('div');
                 sizeElement.classList.add('text-center');
@@ -302,18 +294,14 @@
                 sizeSelector.appendChild(sizeElement);
             });
             
+            // 3. Handle quantity changes logic
             function getTotalQuantity() {
-                let total = 0;
-                sizeSelector.querySelectorAll('.quantity-display').forEach(display => {
-                    total += parseInt(display.textContent, 10);
-                });
-                return total;
+                return Array.from(sizeSelector.querySelectorAll('.quantity-display')).reduce((total, display) => total + parseInt(display.textContent, 10), 0);
             }
 
             function updateAllButtonStates() {
                 const totalQuantity = getTotalQuantity();
                 let selectedSize = null;
-
                 sizeSelector.querySelectorAll('.quantity-display').forEach(display => {
                     if (parseInt(display.textContent) > 0) {
                         selectedSize = display.dataset.size;
@@ -328,61 +316,42 @@
                     
                     decrementBtn.disabled = currentQuantity === 0;
 
-                    if (selectedSize) {
-                        if (size === selectedSize) {
-                            incrementBtn.disabled = totalQuantity >= MAX_TOTAL_QUANTITY;
-                        } else {
-                            incrementBtn.disabled = true;
-                        }
-                    } else {
-                        // If no size is selected yet, all increment buttons should be enabled
-                        incrementBtn.disabled = false;
+                    if (selectedSize) { // A size has been selected
+                        incrementBtn.disabled = (size !== selectedSize) || (totalQuantity >= MAX_TOTAL_QUANTITY);
+                    } else { // No size selected yet
+                        incrementBtn.disabled = totalQuantity >= MAX_TOTAL_QUANTITY;
                     }
                 });
             }
             
-            // 3. Handle quantity changes
             sizeSelector.addEventListener('click', (e) => {
                 const target = e.target.closest('button');
                 if (!target) return;
 
                 const action = target.dataset.action;
                 const size = target.dataset.size;
-                
                 const quantityDisplay = sizeSelector.querySelector(`.quantity-display[data-size="${size}"]`);
                 let currentQuantity = parseInt(quantityDisplay.textContent, 10);
-                const totalQuantity = getTotalQuantity();
 
                 if (action === 'increment') {
-                    if (totalQuantity < MAX_TOTAL_QUANTITY) {
-                        currentQuantity++;
-                    }
-                } else if (action === 'decrement') {
-                    if (currentQuantity > 0) {
-                        currentQuantity--;
-                    }
+                    if (getTotalQuantity() < MAX_TOTAL_QUANTITY) currentQuantity++;
+                } else if (action === 'decrement' && currentQuantity > 0) {
+                    currentQuantity--;
                 }
 
                 quantityDisplay.textContent = currentQuantity;
                 updateAllButtonStates();
             });
 
-            // Name Tag Logic
-            nameTagYesRadio.addEventListener('change', () => {
-                if(nameTagYesRadio.checked) {
-                    nameTagFields.classList.remove('hidden');
-                }
-            });
-            nameTagNoRadio.addEventListener('change', () => {
-                if(nameTagNoRadio.checked) {
-                    nameTagFields.classList.add('hidden');
-                }
+            // 4. Name Tag Logic
+            [nameTagYesRadio, nameTagNoRadio].forEach(radio => {
+                radio.addEventListener('change', () => nameTagFields.classList.toggle('hidden', !nameTagYesRadio.checked));
             });
             nameForTagInput.addEventListener('input', (e) => {
                 nameTagPreviewText.textContent = e.target.value;
             });
 
-            // Modal and Submission Logic
+            // 5. Modal and Submission Logic
             const submitOrderBtn = document.getElementById('submitOrderBtn');
             const orderModal = document.getElementById('orderModal');
             const closeModalBtns = [document.getElementById('closeModalBtn'), document.getElementById('closeModalBtn2')];
@@ -392,16 +361,15 @@
             const modalText = document.getElementById('modal-text');
             const copySuccessMsg = document.getElementById('copy-success-msg');
 
-            // 4. Handle opening the modal and creating the summary
             submitOrderBtn.addEventListener('click', () => {
-                let addressHTML = `${userInfo.StreetAddress}`;
-                if (userInfo.Apartment) addressHTML += `, ${userInfo.Apartment}`;
-                addressHTML += `<br>${userInfo.City}, ${userInfo.State} ${userInfo.ZipCode}`;
+                let addressHTML = `${userInfo.streetAddress}`;
+                if (userInfo.aptSuite) addressHTML += `, ${userInfo.aptSuite}`;
+                addressHTML += `<br>${userInfo.city}, ${userInfo.state} ${userInfo.zipCode}`;
 
                 let orderSummaryHTML = `
                     <div>
-                        <p class="font-bold text-gray-800">${userInfo.FirstName} ${userInfo.LastName}</p>
-                        <p class="text-gray-500 text-xs">${userInfo.Email}</p>
+                        <p class="font-bold text-gray-800">${userInfo.firstName} ${userInfo.lastName}</p>
+                        <p class="text-gray-500 text-xs">${userInfo.email}</p>
                         <p class="text-gray-500 text-xs mt-1">${addressHTML}</p>
                     </div>
                     <hr class="my-2 border-gray-200">
@@ -409,12 +377,14 @@
                 `;
                 
                 let hasItems = false;
+                let shirtSize, quantity;
                 sizeSelector.querySelectorAll('.quantity-display').forEach(display => {
-                    const quantity = parseInt(display.textContent, 10);
-                    if (quantity > 0) {
+                    const q = parseInt(display.textContent, 10);
+                    if (q > 0) {
                         hasItems = true;
-                        const size = display.dataset.size;
-                        orderSummaryHTML += `<p class="flex justify-between"><span class="font-semibold">Shirt (Size ${size}):</span> <span>${quantity}</span></p>`;
+                        shirtSize = display.dataset.size;
+                        quantity = q;
+                        orderSummaryHTML += `<p class="flex justify-between"><span class="font-semibold">Shirt (Size ${shirtSize}):</span> <span>${quantity}</span></p>`;
                     }
                 });
 
@@ -428,20 +398,13 @@
                     orderSummaryHTML += `<p class="flex justify-between"><span class="font-semibold">Name Tag:</span> <span>No</span></p>`;
                 }
                 
-                
-                if (hasItems) {
-                    summaryContent.innerHTML = orderSummaryHTML;
-                    modalFooter.style.display = 'flex';
-                    modalText.textContent = 'Please review your selections. Pressing "Submit Order" will finalize your request.';
-                } else {
-                    summaryContent.innerHTML = `<p class="text-center text-gray-500 py-4">You haven't selected a shirt.</p>`;
-                    modalFooter.style.display = 'none';
-                    modalText.textContent = 'Please select a size and quantity before submitting.';
-                }
+                summaryContent.innerHTML = hasItems ? orderSummaryHTML : `<p class="text-center text-gray-500 py-4">You haven't selected a shirt.</p>`;
+                modalFooter.style.display = hasItems ? 'flex' : 'none';
+                modalText.textContent = hasItems ? 'Please review your selections. Pressing "Submit Order" will finalize your request.' : 'Please select a size and quantity before submitting.';
 
                 orderModal.style.display = 'flex';
                 setTimeout(() => {
-                    orderModal.classList.remove('opacity-0', 'pointer-events-none');
+                    orderModal.classList.remove('opacity-0');
                     orderModal.querySelector('.modal-content').classList.remove('scale-95');
                 }, 20);
 
@@ -451,24 +414,17 @@
                 summaryContent.style.display = 'block';
             });
 
-            // 5. Handle closing the modal
             const closeModal = () => {
-                orderModal.classList.add('opacity-0', 'pointer-events-none');
+                orderModal.classList.add('opacity-0');
                 orderModal.querySelector('.modal-content').classList.add('scale-95');
-                setTimeout(() => {
-                    orderModal.style.display = 'none';
-                }, 300); 
+                setTimeout(() => orderModal.style.display = 'none', 300); 
             };
             
             closeModalBtns.forEach(btn => btn.addEventListener('click', closeModal));
-            orderModal.addEventListener('click', (event) => { if (event.target === orderModal) closeModal(); });
-            document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeModal(); });
 
-            // 6. Handle the actual submission to Google Apps Script
+            // 6. Handle the final submission to Power Automate
             confirmSubmitBtn.addEventListener('click', async () => {
-                
-                let selectedSize = '';
-                let selectedQuantity = 0;
+                let selectedSize = '', selectedQuantity = 0;
                 sizeSelector.querySelectorAll('.quantity-display').forEach(display => {
                     const quantity = parseInt(display.textContent, 10);
                     if (quantity > 0) {
@@ -479,41 +435,34 @@
 
                 const payload = {
                     ...userInfo,
-                    ShirtSize: selectedSize,
-                    Quantity: selectedQuantity,
-                    NameTagNeeded: nameTagYesRadio.checked ? 'Yes' : 'No',
-                    NameTagName: nameTagYesRadio.checked ? nameForTagInput.value : '',
-                    NameTagComment: nameTagYesRadio.checked ? document.getElementById('nameTagComment').value : ''
+                    shirtSize: selectedSize,
+                    quantity: selectedQuantity,
+                    nameTagNeeded: nameTagYesRadio.checked ? 'Yes' : 'No',
+                    nameTagName: nameTagYesRadio.checked ? nameForTagInput.value : '',
+                    nameTagComment: nameTagYesRadio.checked ? document.getElementById('nameTagComment').value : ''
                 };
 
                 confirmSubmitBtn.disabled = true;
                 confirmSubmitBtn.textContent = 'Submitting...';
 
-                // This section is updated to handle the cross-origin request correctly.
                 try {
-                    // This creates a temporary form in memory to submit the data,
-                    // which is a reliable way to bypass certain CORS restrictions.
-                    const formData = new FormData();
-                    for (const key in payload) {
-                        formData.append(key, payload[key]);
-                    }
-
                     const response = await fetch(flowURL, {
                         method: 'POST',
-                        body: new URLSearchParams(formData)
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
                     });
 
-                    // We can't read the response directly due to CORS, but a successful
-                    // submission won't throw a network error.
-                    modalText.textContent = 'Your order has been submitted successfully!';
-                    summaryContent.style.display = 'none';
-                    modalFooter.style.display = 'none';
-                    copySuccessMsg.style.display = 'block';
-                    copySuccessMsg.textContent = 'Order submitted successfully! You can now close this window.';
-
+                    if (response.ok) {
+                        modalText.textContent = 'Your order has been submitted successfully!';
+                        summaryContent.style.display = 'none';
+                        modalFooter.style.display = 'none';
+                        copySuccessMsg.style.display = 'block';
+                    } else {
+                        throw new Error('Server responded with an error.');
+                    }
                 } catch (error) {
-                    // This catch block will run if there's a network failure,
-                    // but it may not catch all CORS issues. The redirect in the Apps Script is the primary fix.
                     console.error('Error submitting order:', error);
                     modalText.textContent = 'There was an error submitting your order. Please try again or contact support.';
                     summaryContent.style.display = 'none';
@@ -526,4 +475,32 @@
     </script>
 </body>
 </html>
+```
+
+---
+
+### **Part 2: Recreate the Power Automate Flow (Refresher)**
+
+You will need to create a **new flow** as the old one will not work with this updated form code.
+
+1.  **Go to Power Automate** and create a **new Instant cloud flow**.
+2.  Choose the trigger **When an HTTP request is received**.
+3.  Click **Use sample payload to generate schema** and paste in the following JSON:
+    ```json
+    {
+        "firstName": "John",
+        "lastName": "Doe",
+        "email": "john.doe@example.com",
+        "streetAddress": "123 Main St",
+        "aptSuite": "Apt 4B",
+        "city": "Anytown",
+        "state": "CA",
+        "zipCode": "12345",
+        "shirtSize": "L",
+        "quantity": "2",
+        "nameTagNeeded": "Yes",
+        "nameTagName": "Johnny",
+        "nameTagComment": "This is a nickname."
+    }
+    
 

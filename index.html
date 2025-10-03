@@ -231,8 +231,8 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // IMPORTANT: Paste your Power Automate URL here
-            const flowURL = 'https://defaultf96ae7b72a2243a59357a82ad6b9cb.73.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/0f92a1ae7b8f4b95a5dc1419554e70f9/triggers/manual/paths/invoke?api-version=1'; 
+            // This URL connects the form to your Google Sheet script.
+            const flowURL = 'https://script.google.com/macros/s/AKfycbxpAoNmU06IGi83EfxrP6cFojS5dOZ0K-a5fwqPmvjN_W1ByER6lRvUI-xdeJhrRAUUtw/exec'; 
 
             const userInfoPage = document.getElementById('userInfoPage');
             const orderPage = document.getElementById('orderPage');
@@ -262,22 +262,21 @@
                 const zip = formData.get('zipCode');
 
                 userInfo = {
-                    firstName: formData.get('firstName'),
-                    lastName: formData.get('lastName'),
-                    fullName: `${formData.get('firstName')} ${formData.get('lastName')}`,
-                    email: formData.get('email'),
-                    streetAddress: street,
-                    aptSuite: apt,
-                    city: city,
-                    state: state,
-                    zipCode: zip,
+                    FirstName: formData.get('firstName'),
+                    LastName: formData.get('lastName'),
+                    Email: formData.get('email'),
+                    StreetAddress: street,
+                    Apartment: apt,
+                    City: city,
+                    State: state,
+                    ZipCode: zip,
                 };
                 
-                if (userInfo.firstName && userInfo.lastName && userInfo.email && userInfo.streetAddress && userInfo.city && userInfo.state && userInfo.zipCode) {
+                if (userInfo.FirstName && userInfo.LastName && userInfo.Email && userInfo.StreetAddress && userInfo.City && userInfo.State && userInfo.ZipCode) {
                     // Set default name tag value
-                    defaultNameTagDisplay.value = userInfo.firstName;
-                    nameForTagInput.value = userInfo.firstName;
-                    nameTagPreviewText.textContent = userInfo.firstName;
+                    defaultNameTagDisplay.value = userInfo.FirstName;
+                    nameForTagInput.value = userInfo.FirstName;
+                    nameTagPreviewText.textContent = userInfo.FirstName;
 
                     userInfoPage.classList.add('opacity-0', 'pointer-events-none');
                     setTimeout(() => {
@@ -395,14 +394,14 @@
 
             // 4. Handle opening the modal and creating the summary
             submitOrderBtn.addEventListener('click', () => {
-                let addressHTML = `${userInfo.streetAddress}`;
-                if (userInfo.aptSuite) addressHTML += `, ${userInfo.aptSuite}`;
-                addressHTML += `<br>${userInfo.city}, ${userInfo.state} ${userInfo.zipCode}`;
+                let addressHTML = `${userInfo.StreetAddress}`;
+                if (userInfo.Apartment) addressHTML += `, ${userInfo.Apartment}`;
+                addressHTML += `<br>${userInfo.City}, ${userInfo.State} ${userInfo.ZipCode}`;
 
                 let orderSummaryHTML = `
                     <div>
-                        <p class="font-bold text-gray-800">${userInfo.fullName}</p>
-                        <p class="text-gray-500 text-xs">${userInfo.email}</p>
+                        <p class="font-bold text-gray-800">${userInfo.FirstName} ${userInfo.LastName}</p>
+                        <p class="text-gray-500 text-xs">${userInfo.Email}</p>
                         <p class="text-gray-500 text-xs mt-1">${addressHTML}</p>
                     </div>
                     <hr class="my-2 border-gray-200">
@@ -465,13 +464,8 @@
             orderModal.addEventListener('click', (event) => { if (event.target === orderModal) closeModal(); });
             document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeModal(); });
 
-            // 6. Handle the actual submission to Power Automate
+            // 6. Handle the actual submission to Google Apps Script
             confirmSubmitBtn.addEventListener('click', async () => {
-                if (flowURL.includes('YOUR_POWER_AUTOMATE_URL_HERE') || !flowURL) {
-                    alert('Configuration error: The Power Automate URL has not been set in the HTML file.');
-                    return;
-                }
-
                 let selectedSize = '';
                 let selectedQuantity = 0;
                 sizeSelector.querySelectorAll('.quantity-display').forEach(display => {
@@ -482,14 +476,20 @@
                     }
                 });
 
-                const payload = {
-                    ...userInfo,
-                    shirtSize: selectedSize,
-                    quantity: selectedQuantity,
-                    nameTagNeeded: nameTagYesRadio.checked ? 'Yes' : 'No',
-                    nameTagName: nameTagYesRadio.checked ? nameForTagInput.value : '',
-                    nameTagComment: nameTagYesRadio.checked ? document.getElementById('nameTagComment').value : ''
-                };
+                const formData = new FormData();
+                formData.append('FirstName', userInfo.FirstName);
+                formData.append('LastName', userInfo.LastName);
+                formData.append('Email', userInfo.Email);
+                formData.append('StreetAddress', userInfo.StreetAddress);
+                formData.append('Apartment', userInfo.Apartment);
+                formData.append('City', userInfo.City);
+                formData.append('State', userInfo.State);
+                formData.append('ZipCode', userInfo.ZipCode);
+                formData.append('ShirtSize', selectedSize);
+                formData.append('Quantity', selectedQuantity);
+                formData.append('NameTagNeeded', nameTagYesRadio.checked ? 'Yes' : 'No');
+                formData.append('NameTagName', nameTagYesRadio.checked ? nameForTagInput.value : '');
+                formData.append('NameTagComment', nameTagYesRadio.checked ? document.getElementById('nameTagComment').value : '');
 
                 confirmSubmitBtn.disabled = true;
                 confirmSubmitBtn.textContent = 'Submitting...';
@@ -497,20 +497,19 @@
                 try {
                     const response = await fetch(flowURL, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(payload)
+                        body: formData
                     });
+                    
+                    const result = await response.json();
 
-                    if (response.ok) {
+                    if (result.result === 'success') {
                         modalText.textContent = 'Your order has been submitted successfully!';
                         summaryContent.style.display = 'none';
                         modalFooter.style.display = 'none';
                         copySuccessMsg.style.display = 'block';
                         copySuccessMsg.textContent = 'Order submitted successfully!';
                     } else {
-                        throw new Error('Network response was not ok.');
+                        throw new Error(result.error || 'Unknown error');
                     }
                 } catch (error) {
                     console.error('Error submitting order:', error);
@@ -521,8 +520,8 @@
                     modalFooter.style.display = 'flex'; // Show footer again to allow retry
                 }
             });
-
         });
     </script>
 </body>
 </html>
+

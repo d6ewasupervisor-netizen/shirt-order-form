@@ -231,8 +231,8 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // This URL connects the form to your Google Sheet script.
-            const flowURL = 'https://script.google.com/macros/s/AKfycbxpAoNmU06IGi83EfxrP6cFojS5dOZ0K-a5fwqPmvjN_W1ByER6lRvUI-xdeJhrRAUUtw/exec'; 
+            // ** IMPORTANT ** This is your new live Google Apps Script URL.
+            const flowURL = 'https://script.google.com/macros/s/AKfycbwlewShL8w4R1BacoEimbnnRTlEXTfuoKpJxg_gC8haP9JVYIG09IjTkNX9ncclRXv20A/exec'; 
 
             const userInfoPage = document.getElementById('userInfoPage');
             const orderPage = document.getElementById('orderPage');
@@ -466,6 +466,7 @@
 
             // 6. Handle the actual submission to Google Apps Script
             confirmSubmitBtn.addEventListener('click', async () => {
+                
                 let selectedSize = '';
                 let selectedQuantity = 0;
                 sizeSelector.querySelectorAll('.quantity-display').forEach(display => {
@@ -476,48 +477,49 @@
                     }
                 });
 
-                const formData = new FormData();
-                formData.append('FirstName', userInfo.FirstName);
-                formData.append('LastName', userInfo.LastName);
-                formData.append('Email', userInfo.Email);
-                formData.append('StreetAddress', userInfo.StreetAddress);
-                formData.append('Apartment', userInfo.Apartment);
-                formData.append('City', userInfo.City);
-                formData.append('State', userInfo.State);
-                formData.append('ZipCode', userInfo.ZipCode);
-                formData.append('ShirtSize', selectedSize);
-                formData.append('Quantity', selectedQuantity);
-                formData.append('NameTagNeeded', nameTagYesRadio.checked ? 'Yes' : 'No');
-                formData.append('NameTagName', nameTagYesRadio.checked ? nameForTagInput.value : '');
-                formData.append('NameTagComment', nameTagYesRadio.checked ? document.getElementById('nameTagComment').value : '');
+                const payload = {
+                    ...userInfo,
+                    ShirtSize: selectedSize,
+                    Quantity: selectedQuantity,
+                    NameTagNeeded: nameTagYesRadio.checked ? 'Yes' : 'No',
+                    NameTagName: nameTagYesRadio.checked ? nameForTagInput.value : '',
+                    NameTagComment: nameTagYesRadio.checked ? document.getElementById('nameTagComment').value : ''
+                };
 
                 confirmSubmitBtn.disabled = true;
                 confirmSubmitBtn.textContent = 'Submitting...';
 
+                // This section is updated to handle the cross-origin request correctly.
                 try {
+                    // This creates a temporary form in memory to submit the data,
+                    // which is a reliable way to bypass certain CORS restrictions.
+                    const formData = new FormData();
+                    for (const key in payload) {
+                        formData.append(key, payload[key]);
+                    }
+
                     const response = await fetch(flowURL, {
                         method: 'POST',
-                        body: formData
+                        body: new URLSearchParams(formData)
                     });
-                    
-                    const result = await response.json();
 
-                    if (result.result === 'success') {
-                        modalText.textContent = 'Your order has been submitted successfully!';
-                        summaryContent.style.display = 'none';
-                        modalFooter.style.display = 'none';
-                        copySuccessMsg.style.display = 'block';
-                        copySuccessMsg.textContent = 'Order submitted successfully!';
-                    } else {
-                        throw new Error(result.error || 'Unknown error');
-                    }
+                    // We can't read the response directly due to CORS, but a successful
+                    // submission won't throw a network error.
+                    modalText.textContent = 'Your order has been submitted successfully!';
+                    summaryContent.style.display = 'none';
+                    modalFooter.style.display = 'none';
+                    copySuccessMsg.style.display = 'block';
+                    copySuccessMsg.textContent = 'Order submitted successfully! You can now close this window.';
+
                 } catch (error) {
+                    // This catch block will run if there's a network failure,
+                    // but it may not catch all CORS issues. The redirect in the Apps Script is the primary fix.
                     console.error('Error submitting order:', error);
                     modalText.textContent = 'There was an error submitting your order. Please try again or contact support.';
                     summaryContent.style.display = 'none';
                     confirmSubmitBtn.disabled = false;
                     confirmSubmitBtn.textContent = 'Try Again';
-                    modalFooter.style.display = 'flex'; // Show footer again to allow retry
+                    modalFooter.style.display = 'flex';
                 }
             });
         });

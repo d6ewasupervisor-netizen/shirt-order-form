@@ -415,9 +415,10 @@
             });
 
             const closeModal = () => {
-                orderModal.classList.add('opacity-0', 'pointer-events-none');
+                orderModal.classList.add('opacity-0');
                 orderModal.querySelector('.modal-content').classList.add('scale-95');
                 setTimeout(() => {
+                    orderModal.classList.add('pointer-events-none');
                     orderModal.style.display = 'none';
                 }, 300); 
             };

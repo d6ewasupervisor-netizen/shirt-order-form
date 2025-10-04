@@ -404,7 +404,7 @@
 
                 orderModal.style.display = 'flex';
                 setTimeout(() => {
-                    orderModal.classList.remove('opacity-0');
+                    orderModal.classList.remove('opacity-0', 'pointer-events-none');
                     orderModal.querySelector('.modal-content').classList.remove('scale-95');
                 }, 20);
 
@@ -415,9 +415,11 @@
             });
 
             const closeModal = () => {
-                orderModal.classList.add('opacity-0');
+                orderModal.classList.add('opacity-0', 'pointer-events-none');
                 orderModal.querySelector('.modal-content').classList.add('scale-95');
-                setTimeout(() => orderModal.style.display = 'none', 300); 
+                setTimeout(() => {
+                    orderModal.style.display = 'none';
+                }, 300); 
             };
             
             closeModalBtns.forEach(btn => btn.addEventListener('click', closeModal));

@@ -426,7 +426,10 @@
             closeModalBtns.forEach(btn => btn.addEventListener('click', closeModal));
 
             // 6. Handle the final submission to Power Automate
-            confirmSubmitBtn.addEventListener('click', async () => {
+            confirmSubmitBtn.addEventListener('click', () => {
+                confirmSubmitBtn.disabled = true;
+                confirmSubmitBtn.textContent = 'Submitting...';
+
                 let selectedSize = '', selectedQuantity = 0;
                 sizeSelector.querySelectorAll('.quantity-display').forEach(display => {
                     const quantity = parseInt(display.textContent, 10);
@@ -445,28 +448,54 @@
                     nameTagComment: nameTagYesRadio.checked ? document.getElementById('nameTagComment').value : ''
                 };
 
-                confirmSubmitBtn.disabled = true;
-                confirmSubmitBtn.textContent = 'Submitting...';
+                // Create a temporary iframe to handle the submission
+                const iframe = document.createElement('iframe');
+                iframe.name = 'submit-iframe';
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
 
-                try {
-                    const response = await fetch(flowURL, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (response.ok) {
-                        modalText.textContent = 'Your order has been submitted successfully!';
-                        summaryContent.style.display = 'none';
-                        modalFooter.style.display = 'none';
-                        copySuccessMsg.style.display = 'block';
-                    } else {
-                        throw new Error('Server responded with an error.');
+                // Create a temporary form
+                const tempForm = document.createElement('form');
+                tempForm.method = 'POST';
+                tempForm.action = flowURL;
+                tempForm.target = 'submit-iframe';
+                
+                // Create an input to hold the JSON payload
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'payload'; // A name for the input
+                input.value = JSON.stringify(payload);
+                tempForm.appendChild(input);
+                
+                document.body.appendChild(tempForm);
+                
+                let submissionTimeout = setTimeout(() => {
+                    handleSubmissionError();
+                    if(document.body.contains(iframe)) {
+                      document.body.removeChild(iframe);
                     }
-                } catch (error) {
-                    console.error('Error submitting order:', error);
+                }, 10000); // 10 second timeout
+
+                iframe.onload = () => {
+                    clearTimeout(submissionTimeout);
+                    handleSubmissionSuccess();
+                    if(document.body.contains(iframe)) {
+                      document.body.removeChild(iframe);
+                    }
+                };
+
+                tempForm.submit();
+                document.body.removeChild(tempForm);
+
+                function handleSubmissionSuccess() {
+                    modalText.textContent = 'Your order has been submitted successfully!';
+                    summaryContent.style.display = 'none';
+                    modalFooter.style.display = 'none';
+                    copySuccessMsg.style.display = 'block';
+                }
+
+                function handleSubmissionError() {
+                    console.error('Error submitting order: Submission timed out or failed.');
                     modalText.textContent = 'There was an error submitting your order. Please try again or contact support.';
                     summaryContent.style.display = 'none';
                     confirmSubmitBtn.disabled = false;
